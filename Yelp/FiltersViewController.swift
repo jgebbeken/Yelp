@@ -8,11 +8,17 @@
 
 import UIKit
 
+@objc protocol FiltersViewControllerDelegate {
+    optional func filtersViewController(FiltersViewController: FiltersViewController, didUpdateFilters filters: [String: AnyObject])
+}
+
 class FiltersViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, SwitchCellDelegate {
 
     @IBOutlet weak var tableView: UITableView!
     
     var categories: [[String: String]]!
+    var switchStates = [Int:Bool]()
+    weak var delegate: FiltersViewControllerDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,6 +45,14 @@ class FiltersViewController: UIViewController, UITableViewDelegate, UITableViewD
         cell.switchLabel.text = categories[indexPath.row]["name"]
         cell.delegate = self
         
+        if switchStates[indexPath.row] != nil{
+            cell.onOffSwitch.on = switchStates[indexPath.row]!
+        }
+        else{
+            cell.onOffSwitch.on = false
+        }
+        cell.onOffSwitch.on = switchStates[indexPath.row] ?? false
+        
         return cell
     }
     
@@ -48,12 +62,29 @@ class FiltersViewController: UIViewController, UITableViewDelegate, UITableViewD
     }
     
     @IBAction func onSearchButton(sender: AnyObject) {
-        
         dismissViewControllerAnimated(true, completion: nil)
+        
+        var selectedCategories = [String]()
+        var filters = [String: AnyObject]()
+        for (row,isSelected) in switchStates {
+            if isSelected {
+                
+                selectedCategories.append(categories[row]["code"]!)
+                
+            }
+        }
+        if selectedCategories.count > 0 {
+            filters["categories"] = selectedCategories
+        }
+        
+        
+        delegate?.filtersViewController?(self, didUpdateFilters: filters)
     }
     
     func switchCell(switchCell: SwitchCell, didChangeValue value: Bool) {
         let indexPath = tableView.indexPathForCell(switchCell)!
+        
+        switchStates[indexPath.row] = value
     }
     
     
